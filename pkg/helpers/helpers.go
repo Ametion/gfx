@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"github.com/Ametion/GFX/gfx"
+	"github.com/Ametion/gfx/gfx"
 )
 
 func Contains(arr []int, value int) bool {

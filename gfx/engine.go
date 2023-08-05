@@ -1,7 +1,7 @@
 package gfx
 
 import (
-	"github.com/Ametion/GFX/pkg/helpers"
+	"github.com/Ametion/gfx/pkg/helpers"
 	"net/http"
 	"strings"
 )
