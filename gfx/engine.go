@@ -41,6 +41,21 @@ func (g *GFXEngine) Post(path string, handler HandlerFunc) {
 	g.addRoute("POST", path, handler, nil, nil)
 }
 
+// Patch adds a PATCH route to the engine
+func (g *GFXEngine) Patch(path string, handler HandlerFunc) {
+	g.addRoute("PATCH", path, handler, nil, nil)
+}
+
+// Put adds a PUT route to the engine
+func (g *GFXEngine) Put(path string, handler HandlerFunc) {
+	g.addRoute("PUT", path, handler, nil, nil)
+}
+
+// Delete adds a DELETE route to the engine
+func (g *GFXEngine) Delete(path string, handler HandlerFunc) {
+	g.addRoute("DELETE", path, handler, nil, nil)
+}
+
 // Group creates a new RouteGroup
 func (g *GFXEngine) Group(basePath string) *RouteGroup {
 	return &RouteGroup{
