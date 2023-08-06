@@ -1,13 +1,16 @@
 package gfx
 
 import (
+	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // GFXEngine represents the main engine
 type GFXEngine struct {
-	routes []Route
+	routes      []Route
+	development bool
 }
 
 // NewGFXEngine creates a new GFXEngine
@@ -15,9 +18,16 @@ func NewGFXEngine() *GFXEngine {
 	return &GFXEngine{}
 }
 
-// ServeHTTP serves HTTP requests
 func (g *GFXEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	startTime := time.Now() // Record the start time
+
 	requestParts := strings.Split(r.URL.Path, "/")
+	statusCode := http.StatusNotFound
+
+	if g.development {
+		// Wrap the ResponseWriter to capture the status code
+		w = newStatusRecorder(w, &statusCode)
+	}
 
 	for _, route := range g.routes {
 		if r.Method == route.method && len(requestParts) == len(route.parts) {
@@ -28,7 +38,15 @@ func (g *GFXEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if g.development {
+		// Log details if development mode is on
+		log.Printf("Date: %s, Method: %s, Status code: %d, Time taken: %v\n", time.Now().Format(time.RFC1123), r.Method, statusCode, time.Since(startTime))
+	}
+
 	http.NotFound(w, r)
+}
+func (g *GFXEngine) IsDevelopment() {
+	g.development = true
 }
 
 // Get adds a GET route to the engine
