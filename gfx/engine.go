@@ -1,7 +1,6 @@
 package gfx
 
 import (
-	"github.com/Ametion/gfx/pkg/helpers"
 	"net/http"
 	"strings"
 )
@@ -64,7 +63,7 @@ func (g *GFXEngine) processRoute(route Route, w http.ResponseWriter, r *http.Req
 	}
 
 	for i, part := range requestParts {
-		if i >= len(route.parts) || (part != route.parts[i] && !helpers.Contains(route.paramsIndex, i)) {
+		if i >= len(route.parts) || (part != route.parts[i] && !contains(route.paramsIndex, i)) {
 			match = false
 			break
 		}
@@ -77,7 +76,7 @@ func (g *GFXEngine) processRoute(route Route, w http.ResponseWriter, r *http.Req
 			params:     params,
 			Headers:    r.Header,
 			index:      0,
-			middleware: append(route.middleware, helpers.HandlerToMiddleware(route.handler)),
+			middleware: append(route.middleware, handlerToMiddleware(route.handler)),
 		}
 		return c
 	}
@@ -104,4 +103,19 @@ func (g *GFXEngine) addRoute(method string, path string, handler HandlerFunc, mi
 
 	route := Route{method, handler, middleware, parts, paramsIndex}
 	g.routes = append(g.routes, route)
+}
+
+func handlerToMiddleware(h HandlerFunc) MiddlewareFunc {
+	return func(c *Context) {
+		h(c)
+	}
+}
+
+func contains(arr []int, value int) bool {
+	for _, v := range arr {
+		if v == value {
+			return true
+		}
+	}
+	return false
 }
