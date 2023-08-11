@@ -20,8 +20,14 @@ func NewGFXEngine() *GFXEngine {
 
 func (g *GFXEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestParts := strings.Split(r.URL.Path, "/")
-	statusCode := http.StatusNotFound                                                                             // Default status code
-	wrappedWriter := &LoggingResponseWriter{ResponseWriter: w, g: g, statusCode: http.StatusOK, method: r.Method} // Default status code
+	statusCode := http.StatusNotFound // Default status code
+	wrappedWriter := &LoggingResponseWriter{
+		ResponseWriter: w,
+		development:    g.development,
+		statusCode:     http.StatusOK,
+		method:         r.Method,
+		route:          r.URL.Path,
+	}
 
 	for _, route := range g.routes {
 		if r.Method == route.method && len(requestParts) == len(route.parts) {
@@ -118,7 +124,7 @@ func (g *GFXEngine) addRoute(method string, path string, handler HandlerFunc, mi
 	}
 
 	parts := strings.Split(path, "/")
-	paramsIndex := []int{}
+	var paramsIndex []int
 
 	for i, part := range parts {
 		if strings.HasPrefix(part, ":") {
