@@ -38,7 +38,11 @@ func (l *LoggingResponseWriter) Write(b []byte) (int, error) {
 		// Reset formatting after printing
 		reset := "\033[0m"
 
-		fmt.Printf("%sDate: %s, Method: %s%s, Status code: %s%d, Full Route: %s%s\n", bold, time.Now().Format(time.RFC1123), methodColor, l.method, statusColor, l.statusCode, l.route, reset)
+		fmt.Printf("%sDate: %s, Method: %s%s%s, Status code: %s%d%s, Route: %s%s%s\n",
+			bold, time.Now().Format(time.RFC1123),
+			methodColor, l.method, reset, // Method in violet
+			statusColor, l.statusCode, reset, // Status code in green/red/yellow
+			"\033[34m", l.route, reset) // Full route in blue
 
 	}
 
