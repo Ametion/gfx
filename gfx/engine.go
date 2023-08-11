@@ -1,10 +1,8 @@
 package gfx
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
-	"time"
 )
 
 // GFXEngine represents the main engine
@@ -15,20 +13,21 @@ type GFXEngine struct {
 
 // NewGFXEngine creates a new GFXEngine
 func NewGFXEngine() *GFXEngine {
-	return &GFXEngine{}
+	return &GFXEngine{
+		development: false,
+	}
 }
 
 func (g *GFXEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now() // Record the start time
 	requestParts := strings.Split(r.URL.Path, "/")
-	statusCode := http.StatusNotFound // Default status code
-	wrappedWriter := newStatusRecorder(w, &statusCode)
+	statusCode := http.StatusNotFound                                                                             // Default status code
+	wrappedWriter := &LoggingResponseWriter{ResponseWriter: w, g: g, statusCode: http.StatusOK, method: r.Method} // Default status code
 
 	for _, route := range g.routes {
 		if r.Method == route.method && len(requestParts) == len(route.parts) {
 			if c := g.processRoute(route, wrappedWriter, r, requestParts); c != nil {
 				c.Next()
-				statusCode = http.StatusOK // Success status code
+				statusCode = http.StatusOK
 				break
 			}
 		}
@@ -36,11 +35,6 @@ func (g *GFXEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if statusCode == http.StatusNotFound {
 		http.NotFound(wrappedWriter, r)
-	}
-
-	if g.development {
-		// Log details to the console if development mode is on
-		fmt.Printf("Date: %s, Method: %s, Status code: %d, Time taken: %v\n", time.Now().Format(time.RFC1123), r.Method, statusCode, time.Since(startTime))
 	}
 }
 

@@ -1,17 +1,27 @@
 package gfx
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+	"time"
+)
 
-type statusRecorder struct {
+type LoggingResponseWriter struct {
 	http.ResponseWriter
-	statusCode *int
+	g          *GFXEngine
+	statusCode int
+	method     string
 }
 
-func newStatusRecorder(w http.ResponseWriter, statusCode *int) *statusRecorder {
-	return &statusRecorder{w, statusCode}
+func (l *LoggingResponseWriter) WriteHeader(statusCode int) {
+	l.statusCode = statusCode
+	l.ResponseWriter.WriteHeader(statusCode)
 }
 
-func (s *statusRecorder) WriteHeader(code int) {
-	*s.statusCode = code
-	s.ResponseWriter.WriteHeader(code)
+func (l *LoggingResponseWriter) Write(b []byte) (int, error) {
+	n, err := l.ResponseWriter.Write(b)
+	if err == nil && l.g.development {
+		fmt.Printf("Date: %s, Method: %s, Status code: %d\n", time.Now().Format(time.RFC1123), l.method, l.statusCode)
+	}
+	return n, err
 }
