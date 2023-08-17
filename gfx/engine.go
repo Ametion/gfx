@@ -119,7 +119,7 @@ func (g *GFXEngine) processRoute(route Route, w http.ResponseWriter, r *http.Req
 // addRoute adds a route to the engine
 func (g *GFXEngine) addRoute(method string, path string, handler HandlerFunc, middleware []MiddlewareFunc, group *RouteGroup) {
 	if group != nil {
-		path = group.basePath + path
+		path = strings.TrimSuffix(group.basePath, "/") + "/" + strings.TrimPrefix(path, "/")
 		middleware = append(group.middleware, middleware...)
 	}
 
