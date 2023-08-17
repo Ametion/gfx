@@ -1,6 +1,7 @@
 package gfx
 
 import (
+	"net/http"
 	"strings"
 )
 
@@ -19,6 +20,13 @@ func AllowMethodsCors(methods ...string) MiddlewareFunc {
 	return func(c *Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Methods", allowedMethods)
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if !strings.Contains(allowedMethods, c.Request.Method) {
+			c.Writer.WriteHeader(http.StatusMethodNotAllowed)
+			c.Abort()
+			return
+		}
+
 		c.Next()
 	}
 }

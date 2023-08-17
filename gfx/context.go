@@ -10,16 +10,23 @@ type Context struct {
 	Writer     http.ResponseWriter
 	Request    *http.Request
 	Headers    http.Header
+	aborted    bool
 	params     map[string]string
 	index      int
 	middleware []MiddlewareFunc
 }
 
+func (c *Context) Abort() {
+	c.aborted = true
+}
+
 // Next proceeds to the next middleware
 func (c *Context) Next() {
-	if c.index < len(c.middleware) {
+	for ; c.index < len(c.middleware); c.index++ {
+		if c.aborted {
+			return
+		}
 		middleware := c.middleware[c.index]
-		c.index++
 		middleware(c)
 	}
 }
