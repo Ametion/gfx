@@ -86,11 +86,13 @@ func (g *GFXEngine) Group(basePath string) *RouteGroup {
 func (g *GFXEngine) Run(addr string) error {
 	fmt.Println("GFXEngine starting with the following routes:")
 	for _, route := range g.routes {
-		path := "/" + strings.Join(route.parts, "/")
+		path := strings.Join(route.parts, "/")
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
 		fmt.Printf("%s %s\n", route.method, path)
 	}
 	fmt.Printf("Listening on %s\n", addr)
-
 	return http.ListenAndServe(addr, g)
 }
 
