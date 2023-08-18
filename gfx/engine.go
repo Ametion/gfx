@@ -1,6 +1,7 @@
 package gfx
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -83,6 +84,13 @@ func (g *GFXEngine) Group(basePath string) *RouteGroup {
 
 // Run starts the web
 func (g *GFXEngine) Run(addr string) error {
+	fmt.Println("GFXEngine starting with the following routes:")
+	for _, route := range g.routes {
+		path := "/" + strings.Join(route.parts, "/")
+		fmt.Printf("%s %s\n", route.method, path)
+	}
+	fmt.Printf("Listening on %s\n", addr)
+
 	return http.ListenAndServe(addr, g)
 }
 
