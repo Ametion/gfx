@@ -14,8 +14,24 @@ type Context struct {
 	params     map[string]string
 	index      int
 	middleware []MiddlewareFunc
+	items      map[string]any
 }
 
+// Set choosed item by choosed index
+func (c *Context) SetItem(index string, item any) {
+	if len(c.items) <= 0 {
+		c.items = make(map[string]any)
+	}
+
+	c.items[index] = item
+}
+
+// Return choosed item by choosed index from param
+func (c *Context) GetItem(index string) any {
+	return c.items[index]
+}
+
+// Set abort variable to true
 func (c *Context) Abort() {
 	c.aborted = true
 }
