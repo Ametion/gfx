@@ -3,8 +3,21 @@ package gfx
 // RouteGroup represents a group of routes
 type RouteGroup struct {
 	engine     *GFXEngine
+	parent     *RouteGroup
 	basePath   string
 	middleware []MiddlewareFunc
+}
+
+func (rg *RouteGroup) Group(basePath string) *RouteGroup {
+	newGroup := &RouteGroup{
+		engine:   rg.engine,
+		parent:   rg,
+		basePath: basePath,
+	}
+
+	newGroup.middleware = append(newGroup.middleware, rg.middleware...)
+
+	return newGroup
 }
 
 // UseMiddleware adds a middleware to the group
@@ -14,25 +27,25 @@ func (rg *RouteGroup) UseMiddleware(middleware MiddlewareFunc) {
 
 // Get adds a GET route to the group
 func (rg *RouteGroup) Get(path string, handler HandlerFunc) {
-	rg.engine.addRoute("GET", path, handler, nil, rg)
+	rg.engine.addRoute("GET", path, handler, rg.middleware, rg)
 }
 
 // Post adds a POST route to the group
 func (rg *RouteGroup) Post(path string, handler HandlerFunc) {
-	rg.engine.addRoute("POST", path, handler, nil, rg)
+	rg.engine.addRoute("POST", path, handler, rg.middleware, rg)
 }
 
 // Patch adds a PATCH route to the engine
 func (rg *RouteGroup) Patch(path string, handler HandlerFunc) {
-	rg.engine.addRoute("PATCH", path, handler, nil, nil)
+	rg.engine.addRoute("PATCH", path, handler, rg.middleware, nil)
 }
 
 // Put adds a PUT route to the engine
 func (rg *RouteGroup) Put(path string, handler HandlerFunc) {
-	rg.engine.addRoute("PUT", path, handler, nil, nil)
+	rg.engine.addRoute("PUT", path, handler, rg.middleware, nil)
 }
 
 // Delete adds a DELETE route to the engine
 func (rg *RouteGroup) Delete(path string, handler HandlerFunc) {
-	rg.engine.addRoute("DELETE", path, handler, nil, nil)
+	rg.engine.addRoute("DELETE", path, handler, rg.middleware, nil)
 }

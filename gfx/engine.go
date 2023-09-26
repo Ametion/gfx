@@ -9,6 +9,7 @@ import (
 // GFXEngine represents the main engine
 type GFXEngine struct {
 	routes      []Route
+	middleware  []MiddlewareFunc
 	development bool
 }
 
@@ -77,9 +78,14 @@ func (g *GFXEngine) Delete(path string, handler HandlerFunc) {
 // Group creates a new RouteGroup
 func (g *GFXEngine) Group(basePath string) *RouteGroup {
 	return &RouteGroup{
-		engine:   g,
-		basePath: basePath,
+		engine:     g,
+		basePath:   basePath,
+		middleware: g.middleware,
 	}
+}
+
+func (g *GFXEngine) UseMiddleware(middleware MiddlewareFunc) {
+	g.middleware = append(g.middleware, middleware)
 }
 
 // Run starts the web
@@ -128,12 +134,30 @@ func (g *GFXEngine) processRoute(route Route, w http.ResponseWriter, r *http.Req
 
 // addRoute adds a route to the engine
 func (g *GFXEngine) addRoute(method string, path string, handler HandlerFunc, middleware []MiddlewareFunc, group *RouteGroup) {
+	fullPath := path
+	var fullMiddleware []MiddlewareFunc
+
+	// Handle Group-based path and middleware merging
 	if group != nil {
-		path = strings.TrimSuffix(group.basePath, "/") + "/" + strings.TrimPrefix(path, "/")
-		middleware = append(group.middleware, middleware...)
+		// If the group has a parent, walk up the hierarchy and prepend each parent's basePath
+		for p := group; p != nil; p = p.parent {
+			fullPath = p.basePath + fullPath
+		}
+
+		// Prepend parent middleware in order from topmost parent to current group
+		for p := group; p != nil; p = p.parent {
+			fullMiddleware = append(p.middleware, fullMiddleware...)
+		}
 	}
 
-	parts := strings.Split(path, "/")
+	// Merge middleware from the engine itself
+	fullMiddleware = append(g.middleware, fullMiddleware...)
+
+	// Finally, include the route-specific middleware
+	fullMiddleware = append(fullMiddleware, middleware...)
+
+	// Split the path into its components
+	parts := strings.Split(fullPath, "/")
 	var paramsIndex []int
 
 	for i, part := range parts {
@@ -143,7 +167,14 @@ func (g *GFXEngine) addRoute(method string, path string, handler HandlerFunc, mi
 		}
 	}
 
-	route := Route{method, handler, middleware, parts, paramsIndex}
+	// Create and add the new Route
+	route := Route{
+		method:      method,
+		handler:     handler,
+		middleware:  fullMiddleware,
+		parts:       parts,
+		paramsIndex: paramsIndex,
+	}
 	g.routes = append(g.routes, route)
 }
 
