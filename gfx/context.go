@@ -63,6 +63,15 @@ func (c *Context) Param(key string) string {
 	return c.params[key]
 }
 
+// PostForm gets a post form value with presented key
+func (c *Context) PostForm(key string) string {
+	if err := c.Request.ParseForm(); err != nil {
+		return ""
+	}
+
+	return c.Request.PostFormValue(key)
+}
+
 func (c *Context) SetBody(v interface{}) error {
 	decoder := json.NewDecoder(c.Request.Body)
 	defer c.Request.Body.Close()
