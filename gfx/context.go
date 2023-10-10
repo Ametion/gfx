@@ -53,6 +53,11 @@ func (c *Context) Next() {
 	}
 }
 
+// Redirect redirects to the specific url with choosed status code
+func (c *Context) Redirect(url string, statusCode int) {
+	http.Redirect(c.Writer, c.Request, url, statusCode)
+}
+
 // Query gets a query value
 func (c *Context) Query(key string) string {
 	return c.Request.URL.Query().Get(key)
