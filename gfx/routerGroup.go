@@ -40,12 +40,17 @@ func (rg *RouteGroup) Patch(path string, handler HandlerFunc) {
 	rg.engine.addRoute("PATCH", path, handler, rg.middleware, rg)
 }
 
-// Put adds a PUT route to the engine
+// Put adds a PUT route to the group
 func (rg *RouteGroup) Put(path string, handler HandlerFunc) {
 	rg.engine.addRoute("PUT", path, handler, rg.middleware, rg)
 }
 
-// Delete adds a DELETE route to the engine
+// Delete adds a DELETE route to the group
 func (rg *RouteGroup) Delete(path string, handler HandlerFunc) {
 	rg.engine.addRoute("DELETE", path, handler, rg.middleware, rg)
+}
+
+// Options adds a OPTIONS route to the group
+func (rg *RouteGroup) Options(path string, handler HandlerFunc) {
+	rg.engine.addRoute("OPTIONS", path, handler, rg.middleware, rg)
 }

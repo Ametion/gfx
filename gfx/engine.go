@@ -75,6 +75,11 @@ func (g *GFXEngine) Delete(path string, handler HandlerFunc) {
 	g.addRoute("DELETE", path, handler, nil, nil)
 }
 
+// Options adds a OPTIONS route to the engine
+func (g *GFXEngine) Options(path string, handler HandlerFunc) {
+	g.addRoute("OPTIONS", path, handler, nil, nil)
+}
+
 // Group creates a new RouteGroup
 func (g *GFXEngine) Group(basePath string) *RouteGroup {
 	return &RouteGroup{
