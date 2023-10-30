@@ -8,9 +8,12 @@ import (
 
 // GFXEngine represents the main engine
 type GFXEngine struct {
-	routes      []Route
-	middleware  []MiddlewareFunc
-	development bool
+	routes         []Route
+	middleware     []MiddlewareFunc
+	development    bool
+	isCors         bool
+	allowedMethods []string
+	allowedOrigins []string
 }
 
 // NewGFXEngine creates a new GFXEngine
@@ -21,6 +24,31 @@ func NewGFXEngine() *GFXEngine {
 }
 
 func (g *GFXEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	origin := r.Header.Get("Origin")
+	methodAllowed := false
+
+	for _, allowedMethod := range g.allowedMethods {
+		if r.Method == allowedMethod {
+			methodAllowed = true
+			break
+		}
+	}
+
+	for _, allowedOrigin := range g.allowedOrigins {
+		if (allowedOrigin == origin || allowedOrigin == "*") && methodAllowed {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			w.Header().Set("Access-Control-Allow-Methods", strings.Join(g.allowedMethods, ", "))
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			break
+		}
+	}
+
+	if !methodAllowed {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Method not allowed"))
+		return
+	}
+
 	requestParts := strings.Split(r.URL.Path, "/")
 	statusCode := http.StatusNotFound // Default status code
 	wrappedWriter := &LoggingResponseWriter{
@@ -89,6 +117,7 @@ func (g *GFXEngine) Group(basePath string) *RouteGroup {
 	}
 }
 
+// Func which use for add middleware to whole engine
 func (g *GFXEngine) UseMiddleware(middleware MiddlewareFunc) {
 	g.middleware = append(g.middleware, middleware)
 }
@@ -97,11 +126,13 @@ func (g *GFXEngine) UseMiddleware(middleware MiddlewareFunc) {
 func (g *GFXEngine) Run(addr string) error {
 	fmt.Println("GFXEngine starting with the following routes:")
 	for _, route := range g.routes {
-		path := strings.Join(route.parts, "/")
-		if !strings.HasPrefix(path, "/") {
-			path = "/" + path
+		if route.method != "OPTIONS" {
+			path := strings.Join(route.parts, "/")
+			if !strings.HasPrefix(path, "/") {
+				path = "/" + path
+			}
+			fmt.Printf("%s %s\n", route.method, path)
 		}
-		fmt.Printf("%s %s\n", route.method, path)
 	}
 	fmt.Printf("Listening on %s\n", addr)
 	return http.ListenAndServe(addr, g)
@@ -139,6 +170,23 @@ func (g *GFXEngine) processRoute(route Route, w http.ResponseWriter, r *http.Req
 
 // addRoute adds a route to the engine
 func (g *GFXEngine) addRoute(method string, path string, handler HandlerFunc, middleware []MiddlewareFunc, group *RouteGroup) {
+	if g.isCors && method != "OPTIONS" {
+		for i := range g.allowedMethods {
+			if g.allowedMethods[i] == method {
+				g.addRoute("OPTIONS", path, func(c *Context) {
+					for _, allowedOrigin := range g.allowedOrigins {
+						if allowedOrigin == c.Request.Header.Get("Origin") || allowedOrigin == "*" {
+							c.SendJSON(204, "")
+							return
+						}
+					}
+					c.SendJSON(403, "Forbidden")
+				}, nil, nil)
+			}
+		}
+
+	}
+
 	fullPath := path
 	var fullMiddleware []MiddlewareFunc
 
