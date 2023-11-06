@@ -14,6 +14,7 @@ type GFXEngine struct {
 	isCors         bool
 	allowedMethods []string
 	allowedOrigins []string
+	allowedHeaders []string
 }
 
 // NewGFXEngine creates a new GFXEngine
@@ -23,6 +24,7 @@ func NewGFXEngine() *GFXEngine {
 	}
 }
 
+// ServeHTTP handles the request
 func (g *GFXEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	origin := r.Header.Get("Origin")
 	methodAllowed := false
@@ -38,14 +40,17 @@ func (g *GFXEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if (allowedOrigin == origin || allowedOrigin == "*") && methodAllowed {
 			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 			w.Header().Set("Access-Control-Allow-Methods", strings.Join(g.allowedMethods, ", "))
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Headers", strings.Join(g.allowedHeaders, ", "))
 			break
 		}
 	}
 
 	if !methodAllowed {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("Method not allowed"))
+		_, err := w.Write([]byte("Method not allowed"))
+		if err != nil {
+			return
+		}
 		return
 	}
 
@@ -173,7 +178,14 @@ func (g *GFXEngine) addRoute(method string, path string, handler HandlerFunc, mi
 	if g.isCors && method != "OPTIONS" {
 		for i := range g.allowedMethods {
 			if g.allowedMethods[i] == method {
-				g.addRoute("OPTIONS", path, func(c *Context) {
+				fullPath := path
+				if group != nil {
+					for p := group; p != nil; p = p.parent {
+						fullPath = p.basePath + fullPath
+					}
+				}
+
+				g.addRoute("OPTIONS", fullPath, func(c *Context) {
 					for _, allowedOrigin := range g.allowedOrigins {
 						if allowedOrigin == c.Request.Header.Get("Origin") || allowedOrigin == "*" {
 							c.SendJSON(204, "")
